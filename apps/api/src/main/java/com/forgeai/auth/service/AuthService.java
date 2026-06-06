@@ -97,7 +97,21 @@ public class AuthService {
         return toUserInfo(user);
     }
 
-    // ── Helpers ──────────────────────────────────────────────
+    public AuthDto.UserInfo updateProfile(String userId, AuthDto.UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BadCredentialsException("User not found"));
+        if (request.getName() != null && !request.getName().isBlank()) {
+            user.setName(request.getName().trim());
+        }
+        if (request.getAvatar() != null) {
+            user.setAvatar(request.getAvatar());
+        }
+        user = userRepository.save(user);
+        log.info("Profile updated for user: {}", user.getId());
+        return toUserInfo(user);
+    }
+
+
 
     private AuthDto.AuthResponse generateAuthResponse(User user) {
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getRole());

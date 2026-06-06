@@ -5,17 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Sparkles,
-  Plus,
-  Presentation,
   FileText,
   Upload,
   Wand2,
   Layout,
-  ArrowRight,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useRef } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, type CreatePresentationRequest } from "@/lib/api";
+import { toast } from "sonner";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -35,19 +37,66 @@ const styles = ["minimal", "modern", "corporate", "creative", "academic"];
 const tones = ["formal", "casual", "persuasive", "educational", "inspirational"];
 
 export default function NewPresentationPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const [prompt, setPrompt] = useState("");
   const [sourceType, setSourceType] = useState("PROMPT");
   const [slideCount, setSlideCount] = useState(10);
   const [style, setStyle] = useState("minimal");
   const [tone, setTone] = useState("formal");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const createMutation = useMutation({
+    mutationFn: (req: CreatePresentationRequest) => api.createPresentation(req),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["presentations"] });
+      queryClient.invalidateQueries({ queryKey: ["presentations-count"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-presentations"] });
+      toast.success("Presentation created!", {
+        description: `"${res.data?.title}" is ready.`,
+      });
+      router.push("/dashboard/presentations");
+    },
+    onError: (err) => {
+      const msg = err instanceof Error ? err.message : "Failed to generate presentation";
+      setError(msg);
+      toast.error("Generation failed", { description: msg });
+    },
+  });
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
-    setIsGenerating(true);
-    // TODO: Call api.createPresentation() and redirect
-    setTimeout(() => setIsGenerating(false), 3000);
+    setError(null);
+
+    if (sourceType === "PROMPT" && !prompt.trim()) {
+      setError("Please enter a topic or prompt.");
+      return;
+    }
+    if (sourceType === "URL" && !prompt.trim()) {
+      setError("Please enter a URL.");
+      return;
+    }
+    if (sourceType === "PDF" && !pdfFile) {
+      setError("Please upload a PDF file.");
+      return;
+    }
+
+    const req: CreatePresentationRequest = {
+      prompt: sourceType === "PDF" ? (pdfFile?.name ?? "Uploaded PDF") : prompt.trim(),
+      sourceType,
+      sourceUrl: sourceType === "URL" ? prompt.trim() : undefined,
+      slideCount,
+      style,
+      tone,
+      layout: "default",
+    };
+
+    createMutation.mutate(req);
   };
+
+  const isGenerating = createMutation.isPending;
 
   return (
     <motion.div className="max-w-4xl space-y-8" initial="hidden" animate="visible">
@@ -63,7 +112,7 @@ export default function NewPresentationPage() {
           {sourceTypes.map((s) => (
             <button
               key={s.id}
-              onClick={() => setSourceType(s.id)}
+              onClick={() => { setSourceType(s.id); setPrompt(""); setPdfFile(null); setError(null); }}
               className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer ${
                 sourceType === s.id
                   ? "border-[var(--primary)] bg-[var(--primary)]/5 shadow-sm"
@@ -78,26 +127,59 @@ export default function NewPresentationPage() {
         </div>
       </motion.div>
 
-      {/* Prompt */}
+      {/* Prompt / URL / PDF Upload */}
       <motion.div variants={fadeUp} custom={2}>
         <label htmlFor="prompt" className="text-sm font-semibold mb-2 block">
           {sourceType === "URL" ? "URL" : sourceType === "PDF" ? "Upload PDF" : "Topic / Prompt"}
         </label>
         {sourceType === "PDF" ? (
-          <div className="flex items-center justify-center h-32 rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-[var(--primary)]/30 transition-colors cursor-pointer">
-            <div className="text-center">
-              <Upload className="size-8 text-[var(--muted-foreground)] mx-auto mb-2" />
-              <p className="text-sm text-[var(--muted-foreground)]">Click or drag to upload PDF</p>
-            </div>
+          <div
+            onClick={() => fileRef.current?.click()}
+            className={`flex flex-col items-center justify-center h-36 rounded-2xl border-2 border-dashed transition-colors cursor-pointer ${
+              pdfFile
+                ? "border-[var(--primary)] bg-[var(--primary)]/5"
+                : "border-[var(--border)] hover:border-[var(--primary)]/30 hover:bg-[var(--accent)]/30"
+            }`}
+          >
+            {pdfFile ? (
+              <div className="text-center">
+                <CheckCircle2 className="size-8 text-[var(--primary)] mx-auto mb-2" />
+                <p className="text-sm font-medium">{pdfFile.name}</p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+            ) : (
+              <div className="text-center">
+                <Upload className="size-8 text-[var(--muted-foreground)] mx-auto mb-2" />
+                <p className="text-sm text-[var(--muted-foreground)]">Click or drag to upload PDF</p>
+              </div>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) { setPdfFile(f); setError(null); }
+              }}
+            />
           </div>
         ) : (
           <textarea
             id="prompt"
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => { setPrompt(e.target.value); setError(null); }}
             rows={4}
-            placeholder={sourceType === "URL" ? "https://..." : "e.g., Quarterly business review for Q4 2025 with financial highlights, team achievements, and roadmap..."}
-            className="w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all resize-none"
+            placeholder={
+              sourceType === "URL"
+                ? "https://..."
+                : "e.g., Quarterly business review for Q4 2025 with financial highlights, team achievements, and roadmap..."
+            }
+            className={`w-full rounded-2xl border bg-[var(--background)] px-4 py-3 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all resize-none ${
+              error && !prompt.trim() ? "border-[var(--destructive)]" : "border-[var(--border)]"
+            }`}
           />
         )}
       </motion.div>
@@ -154,6 +236,18 @@ export default function NewPresentationPage() {
         </div>
       </motion.div>
 
+      {/* Error display */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 p-3 rounded-xl bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 text-sm text-[var(--destructive)]"
+        >
+          <AlertCircle className="size-4 flex-shrink-0" />
+          <span>{error}</span>
+        </motion.div>
+      )}
+
       {/* Generate Button */}
       <motion.div variants={fadeUp} custom={4}>
         <Button
@@ -161,12 +255,12 @@ export default function NewPresentationPage() {
           size="xl"
           className="w-full gap-2.5 text-base font-semibold"
           onClick={handleGenerate}
-          disabled={isGenerating || (!prompt.trim() && sourceType !== "PDF")}
+          disabled={isGenerating}
         >
           {isGenerating ? (
             <>
               <div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Generating...
+              Generating… This may take up to 30 seconds
             </>
           ) : (
             <>

@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { toast } from "sonner";
 import {
   Sparkles,
   LayoutDashboard,
@@ -50,8 +52,52 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, isAuthenticated, isLoading, fetchUser, logout } = useAuthStore();
+
+  // Auth guard — fetch user on mount, redirect if not authenticated
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("forge_access_token") : null;
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    if (!isAuthenticated) {
+      fetchUser().catch(() => {
+        router.replace("/login");
+      });
+    }
+  }, [isAuthenticated, fetchUser, router]);
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success("Logged out successfully");
+    router.push("/");
+  };
+
+  // Show minimal loading state while auth is resolving
+  if (isLoading && !isAuthenticated) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="size-8 border-2 border-[var(--primary)]/30 border-t-[var(--primary)] rounded-full animate-spin" />
+          <p className="text-sm text-[var(--muted-foreground)]">Loading workspace…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Get initials from user name for avatar
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "?";
 
   return (
     <div className="flex min-h-dvh">
@@ -122,6 +168,19 @@ export default function DashboardLayout({
             );
           })}
 
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--sidebar-foreground)] hover:bg-red-500/10 hover:text-red-500 w-full transition-all duration-200",
+              collapsed && "justify-center px-0"
+            )}
+            title={collapsed ? "Logout" : undefined}
+          >
+            <LogOut className="size-[18px] flex-shrink-0" />
+            {!collapsed && <span>Logout</span>}
+          </button>
+
           {/* Collapse Toggle */}
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -176,6 +235,15 @@ export default function DashboardLayout({
                 );
               })}
             </nav>
+            <div className="border-t border-[var(--sidebar-border)] p-2.5">
+              <button
+                onClick={() => { setMobileOpen(false); handleLogout(); }}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--sidebar-foreground)] hover:bg-red-500/10 hover:text-red-500 w-full transition-all"
+              >
+                <LogOut className="size-[18px]" />
+                <span>Logout</span>
+              </button>
+            </div>
           </aside>
         </div>
       )}
@@ -215,8 +283,12 @@ export default function DashboardLayout({
               <Bell className="size-[18px]" />
               <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--primary)]" />
             </Button>
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary)]/60 flex items-center justify-center text-xs font-bold text-[var(--primary-foreground)] cursor-pointer">
-              G
+            {/* User avatar with real initials */}
+            <div
+              title={user?.name ?? "User"}
+              className="h-8 w-8 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary)]/60 flex items-center justify-center text-xs font-bold text-[var(--primary-foreground)] cursor-pointer select-none"
+            >
+              {initials}
             </div>
           </div>
         </header>

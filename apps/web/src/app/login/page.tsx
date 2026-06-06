@@ -1,15 +1,50 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Sparkles, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { useAuthStore } from "@/lib/stores/auth-store";
+
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const { login, isLoading, error, clearError } = useAuthStore();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
+    clearError();
+    try {
+      await login(data.email, data.password);
+      toast.success("Welcome back!", { description: "Redirecting to your dashboard…" });
+      router.push("/dashboard");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Login failed. Please try again.";
+      toast.error("Sign in failed", { description: message });
+    }
+  };
 
   return (
     <div className="min-h-dvh flex">
@@ -76,7 +111,13 @@ export default function LoginPage() {
           {/* OAuth Buttons */}
           <div className="grid grid-cols-3 gap-3 mb-6">
             {["Google", "GitHub", "LinkedIn"].map((provider) => (
-              <Button key={provider} variant="outline" className="h-11 text-sm">
+              <Button
+                key={provider}
+                variant="outline"
+                className="h-11 text-sm"
+                type="button"
+                onClick={() => toast.info(`${provider} OAuth coming soon`)}
+              >
                 {provider}
               </Button>
             ))}
@@ -93,8 +134,16 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {/* Global error banner */}
+          {error && (
+            <div className="flex items-center gap-2 p-3 mb-4 rounded-xl bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 text-sm text-[var(--destructive)]">
+              <AlertCircle className="size-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           {/* Email/Password Form */}
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">Email</label>
               <div className="relative">
@@ -103,9 +152,18 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="you@example.com"
-                  className="flex h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] pl-10 pr-4 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all"
+                  autoComplete="email"
+                  {...register("email")}
+                  className={`flex h-11 w-full rounded-xl border bg-[var(--background)] pl-10 pr-4 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all ${errors.email ? "border-[var(--destructive)]" : "border-[var(--border)]"
+                    }`}
                 />
               </div>
+              {errors.email && (
+                <p className="text-xs text-[var(--destructive)] flex items-center gap-1 mt-1">
+                  <AlertCircle className="size-3" />
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -121,7 +179,10 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="flex h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] pl-10 pr-11 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all"
+                  autoComplete="current-password"
+                  {...register("password")}
+                  className={`flex h-11 w-full rounded-xl border bg-[var(--background)] pl-10 pr-11 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all ${errors.password ? "border-[var(--destructive)]" : "border-[var(--border)]"
+                    }`}
                 />
                 <button
                   type="button"
@@ -131,11 +192,31 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-xs text-[var(--destructive)] flex items-center gap-1 mt-1">
+                  <AlertCircle className="size-3" />
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
-            <Button variant="glow" className="w-full h-11 mt-2 gap-2">
-              Sign in
-              <ArrowRight className="size-4" />
+            <Button
+              variant="glow"
+              className="w-full h-11 mt-2 gap-2"
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in…
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <ArrowRight className="size-4" />
+                </>
+              )}
             </Button>
           </form>
 

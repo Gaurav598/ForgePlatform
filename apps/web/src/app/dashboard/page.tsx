@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { api } from "@/lib/api";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -25,41 +28,6 @@ const fadeUp = {
     transition: { delay: i * 0.06, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
   }),
 };
-
-const stats = [
-  {
-    label: "Presentations",
-    value: "0",
-    change: "Create your first",
-    icon: Presentation,
-    href: "/dashboard/presentations",
-    color: "oklch(0.7 0.2 270)",
-  },
-  {
-    label: "Resumes Analyzed",
-    value: "0",
-    change: "Upload a resume",
-    icon: FileText,
-    href: "/dashboard/resumes",
-    color: "oklch(0.65 0.2 190)",
-  },
-  {
-    label: "Mock Interviews",
-    value: "0",
-    change: "Start practicing",
-    icon: Mic,
-    href: "/dashboard/interviews",
-    color: "oklch(0.65 0.22 30)",
-  },
-  {
-    label: "ATS Score",
-    value: "—",
-    change: "Analyze to see",
-    icon: Target,
-    href: "/dashboard/resumes",
-    color: "oklch(0.75 0.16 80)",
-  },
-];
 
 const quickActions = [
   {
@@ -73,26 +41,88 @@ const quickActions = [
     icon: FileText,
     label: "Analyze Resume",
     desc: "Get your ATS score instantly",
-    href: "/dashboard/resumes/upload",
+    href: "/dashboard/resumes",
     gradient: "from-cyan-500/10 to-teal-500/10",
   },
   {
     icon: Mic,
     label: "Mock Interview",
     desc: "Practice with AI interviewer",
-    href: "/dashboard/interviews/new",
+    href: "/dashboard/interviews",
     gradient: "from-orange-500/10 to-red-500/10",
   },
   {
     icon: Sparkles,
     label: "Generate Document",
     desc: "SOP, Cover Letter, LOR & more",
-    href: "/dashboard/documents/new",
+    href: "/dashboard/documents",
     gradient: "from-pink-500/10 to-rose-500/10",
   },
 ];
 
 export default function DashboardPage() {
+  const { user } = useAuthStore();
+
+  // Fetch real counts
+  const { data: presentationsData } = useQuery({
+    queryKey: ["presentations-count"],
+    queryFn: () => api.listPresentations(0, 1),
+    staleTime: 30_000,
+  });
+
+  const { data: resumesData } = useQuery({
+    queryKey: ["resumes-count"],
+    queryFn: () => api.listResumes(0, 1),
+    staleTime: 30_000,
+  });
+
+  // Recent presentations for activity feed
+  const { data: recentPresentations } = useQuery({
+    queryKey: ["recent-presentations"],
+    queryFn: () => api.listPresentations(0, 5),
+    staleTime: 30_000,
+  });
+
+  const presentationCount = presentationsData?.data?.totalElements ?? 0;
+  const resumeCount = resumesData?.data?.totalElements ?? 0;
+
+  const stats = [
+    {
+      label: "Presentations",
+      value: presentationCount.toString(),
+      change: presentationCount === 0 ? "Create your first" : `${presentationCount} total`,
+      icon: Presentation,
+      href: "/dashboard/presentations",
+      color: "oklch(0.7 0.2 270)",
+    },
+    {
+      label: "Resumes Analyzed",
+      value: resumeCount.toString(),
+      change: resumeCount === 0 ? "Upload a resume" : `${resumeCount} uploaded`,
+      icon: FileText,
+      href: "/dashboard/resumes",
+      color: "oklch(0.65 0.2 190)",
+    },
+    {
+      label: "Mock Interviews",
+      value: "0",
+      change: "Start practicing",
+      icon: Mic,
+      href: "/dashboard/interviews",
+      color: "oklch(0.65 0.22 30)",
+    },
+    {
+      label: "ATS Score",
+      value: "—",
+      change: "Analyze to see",
+      icon: Target,
+      href: "/dashboard/resumes",
+      color: "oklch(0.75 0.16 80)",
+    },
+  ];
+
+  const recentItems = recentPresentations?.data?.content ?? [];
+
   return (
     <motion.div
       className="space-y-8 max-w-7xl"
@@ -101,7 +131,9 @@ export default function DashboardPage() {
     >
       {/* Welcome */}
       <motion.div variants={fadeUp} custom={0}>
-        <h1 className="text-2xl font-bold mb-1">Welcome to FORGE AI</h1>
+        <h1 className="text-2xl font-bold mb-1">
+          Welcome back{user?.name ? `, ${user.name.split(" ")[0]}` : ""} 👋
+        </h1>
         <p className="text-[var(--muted-foreground)]">
           Your unified AI workspace for career growth and content creation.
         </p>
@@ -161,30 +193,64 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* Recent Activity — Placeholder */}
+      {/* Recent Activity */}
       <motion.div variants={fadeUp} custom={10}>
         <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
         <Card>
-          <CardContent className="p-12 text-center">
-            <Clock className="size-10 text-[var(--muted-foreground)] mx-auto mb-3 opacity-50" />
-            <p className="text-[var(--muted-foreground)] text-sm mb-4">
-              No activity yet. Start by creating a presentation or analyzing a resume.
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              <Link href="/dashboard/presentations/new">
-                <Button size="sm" variant="glow" className="gap-1.5">
-                  <Sparkles className="size-3.5" />
-                  Create Presentation
-                </Button>
-              </Link>
-              <Link href="/dashboard/resumes/upload">
-                <Button size="sm" variant="outline" className="gap-1.5">
-                  <FileText className="size-3.5" />
-                  Analyze Resume
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
+          {recentItems.length === 0 ? (
+            <CardContent className="p-12 text-center">
+              <Clock className="size-10 text-[var(--muted-foreground)] mx-auto mb-3 opacity-50" />
+              <p className="text-[var(--muted-foreground)] text-sm mb-4">
+                No activity yet. Start by creating a presentation or analyzing a resume.
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <Link href="/dashboard/presentations/new">
+                  <Button size="sm" variant="glow" className="gap-1.5">
+                    <Sparkles className="size-3.5" />
+                    Create Presentation
+                  </Button>
+                </Link>
+                <Link href="/dashboard/resumes">
+                  <Button size="sm" variant="outline" className="gap-1.5">
+                    <FileText className="size-3.5" />
+                    Analyze Resume
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          ) : (
+            <CardContent className="p-4">
+              <div className="divide-y divide-[var(--border)]">
+                {recentItems.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/dashboard/presentations`}
+                    className="flex items-center justify-between py-3 px-2 rounded-lg hover:bg-[var(--accent)] transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)]/10">
+                        <Presentation className="size-4 text-[var(--primary)]" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium line-clamp-1">{item.title}</div>
+                        <div className="text-xs text-[var(--muted-foreground)]">
+                          Presentation • {item.slideCount} slides • {item.status}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {item.status.toLowerCase()}
+                      </Badge>
+                      <span className="text-xs text-[var(--muted-foreground)] hidden sm:block">
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          )}
         </Card>
       </motion.div>
     </motion.div>

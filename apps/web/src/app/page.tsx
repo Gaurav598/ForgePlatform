@@ -457,11 +457,10 @@ export default function LandingPage() {
             {pricingPlans.map((plan, i) => (
               <motion.div key={plan.name} variants={scaleIn} custom={i}>
                 <Card
-                  className={`h-full relative overflow-hidden transition-all duration-300 ${
-                    plan.popular
+                  className={`h-full relative overflow-hidden transition-all duration-300 ${plan.popular
                       ? "border-[var(--primary)]/50 shadow-xl glow-sm scale-[1.02]"
                       : "border-[var(--border)]/50 hover:border-[var(--primary)]/20 hover:shadow-lg"
-                  }`}
+                    }`}
                 >
                   {plan.popular && (
                     <div className="absolute top-0 right-0 px-3 py-1 rounded-bl-xl bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold">

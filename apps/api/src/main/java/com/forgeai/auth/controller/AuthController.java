@@ -68,4 +68,14 @@ public class AuthController {
         AuthDto.UserInfo userInfo = authService.getCurrentUser(userId);
         return ResponseEntity.ok(ApiResponse.ok(userInfo));
     }
+
+    @PatchMapping("/me")
+    @Operation(summary = "Update current user profile")
+    public ResponseEntity<ApiResponse<AuthDto.UserInfo>> updateProfile(
+            Authentication authentication,
+            @RequestBody AuthDto.UpdateProfileRequest request) {
+        String userId = (String) authentication.getPrincipal();
+        AuthDto.UserInfo userInfo = authService.updateProfile(userId, request);
+        return ResponseEntity.ok(ApiResponse.ok("Profile updated", userInfo));
+    }
 }

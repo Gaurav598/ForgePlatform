@@ -196,6 +196,22 @@ class ApiClient {
   async getResumeAnalyses(resumeId: string) {
     return this.request<ApiResponse<AnalysisResponse[]>>(`/resumes/${resumeId}/analyses`);
   }
+
+  // ── Generic AI ────────────────────────────────────────
+  async generateAI(prompt: string, systemPrompt?: string, temperature?: number, maxTokens?: number) {
+    return this.request<ApiResponse<AIGenerateResponse>>("/ai/generate", {
+      method: "POST",
+      body: { prompt, systemPrompt, temperature, maxTokens },
+    });
+  }
+
+  // ── Profile ───────────────────────────────────────────
+  async updateProfile(name?: string, avatar?: string) {
+    return this.request<ApiResponse<UserInfo>>("/auth/me", {
+      method: "PATCH",
+      body: { name, avatar },
+    });
+  }
 }
 
 // ── Types ────────────────────────────────────────────────
@@ -205,6 +221,13 @@ export interface ApiResponse<T> {
   data?: T;
   errors?: unknown;
   timestamp?: string;
+}
+
+export interface AIGenerateResponse {
+  content: string;
+  provider: string;
+  totalTokens: number;
+  latencyMs: number;
 }
 
 export interface AuthResponse {

@@ -1,13 +1,53 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Sparkles, Mail, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { useAuthStore } from "@/lib/stores/auth-store";
+
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[0-9]/, "Must contain at least one number")
+    .regex(/[^a-zA-Z0-9]/, "Must contain at least one special character"),
+});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const { register: registerUser, isLoading, error, clearError } = useAuthStore();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+  });
+
+  const onSubmit = async (data: RegisterFormData) => {
+    clearError();
+    try {
+      await registerUser(data.name, data.email, data.password);
+      toast.success("Account created!", { description: "Welcome to FORGE AI." });
+      router.push("/dashboard");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
+      toast.error("Registration failed", { description: message });
+    }
+  };
 
   return (
     <div className="min-h-dvh flex">
@@ -86,7 +126,13 @@ export default function RegisterPage() {
           {/* OAuth Buttons */}
           <div className="grid grid-cols-3 gap-3 mb-6">
             {["Google", "GitHub", "LinkedIn"].map((provider) => (
-              <Button key={provider} variant="outline" className="h-11 text-sm">
+              <Button
+                key={provider}
+                variant="outline"
+                className="h-11 text-sm"
+                type="button"
+                onClick={() => toast.info(`${provider} OAuth coming soon`)}
+              >
                 {provider}
               </Button>
             ))}
@@ -103,8 +149,16 @@ export default function RegisterPage() {
             </div>
           </div>
 
+          {/* Global error banner */}
+          {error && (
+            <div className="flex items-center gap-2 p-3 mb-4 rounded-xl bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 text-sm text-[var(--destructive)]">
+              <AlertCircle className="size-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           {/* Registration Form */}
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium">Full Name</label>
               <div className="relative">
@@ -113,9 +167,18 @@ export default function RegisterPage() {
                   id="name"
                   type="text"
                   placeholder="John Doe"
-                  className="flex h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] pl-10 pr-4 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all"
+                  autoComplete="name"
+                  {...register("name")}
+                  className={`flex h-11 w-full rounded-xl border bg-[var(--background)] pl-10 pr-4 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all ${errors.name ? "border-[var(--destructive)]" : "border-[var(--border)]"
+                    }`}
                 />
               </div>
+              {errors.name && (
+                <p className="text-xs text-[var(--destructive)] flex items-center gap-1 mt-1">
+                  <AlertCircle className="size-3" />
+                  {errors.name.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -126,9 +189,18 @@ export default function RegisterPage() {
                   id="email"
                   type="email"
                   placeholder="you@example.com"
-                  className="flex h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] pl-10 pr-4 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all"
+                  autoComplete="email"
+                  {...register("email")}
+                  className={`flex h-11 w-full rounded-xl border bg-[var(--background)] pl-10 pr-4 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all ${errors.email ? "border-[var(--destructive)]" : "border-[var(--border)]"
+                    }`}
                 />
               </div>
+              {errors.email && (
+                <p className="text-xs text-[var(--destructive)] flex items-center gap-1 mt-1">
+                  <AlertCircle className="size-3" />
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -139,7 +211,10 @@ export default function RegisterPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="flex h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] pl-10 pr-11 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all"
+                  autoComplete="new-password"
+                  {...register("password")}
+                  className={`flex h-11 w-full rounded-xl border bg-[var(--background)] pl-10 pr-11 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-all ${errors.password ? "border-[var(--destructive)]" : "border-[var(--border)]"
+                    }`}
                 />
                 <button
                   type="button"
@@ -149,14 +224,35 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
-              <p className="text-xs text-[var(--muted-foreground)]">
-                Must be at least 8 characters with a number and special character
-              </p>
+              {errors.password ? (
+                <p className="text-xs text-[var(--destructive)] flex items-center gap-1 mt-1">
+                  <AlertCircle className="size-3" />
+                  {errors.password.message}
+                </p>
+              ) : (
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  Must be at least 8 characters with a number and special character
+                </p>
+              )}
             </div>
 
-            <Button variant="glow" className="w-full h-11 mt-2 gap-2">
-              Create Account
-              <ArrowRight className="size-4" />
+            <Button
+              variant="glow"
+              className="w-full h-11 mt-2 gap-2"
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Creating account…
+                </>
+              ) : (
+                <>
+                  Create Account
+                  <ArrowRight className="size-4" />
+                </>
+              )}
             </Button>
           </form>
 
