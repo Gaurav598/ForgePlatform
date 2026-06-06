@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Menu, X, Sparkles } from "lucide-react";
+import { Menu, X, Sparkles, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -16,10 +16,16 @@ const navLinks = [
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll, { passive: true });
+    
+    // Check for auth token in localStorage
+    const token = localStorage.getItem("forge_access_token");
+    setIsAuthenticated(!!token);
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -59,16 +65,27 @@ export function Navbar() {
         {/* Actions */}
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
-          <Link href="/login">
-            <Button variant="ghost" size="sm">
-              Sign in
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button variant="glow" size="sm">
-              Get Started
-            </Button>
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/dashboard">
+              <Button variant="glow" size="sm" className="gap-1.5">
+                <LayoutDashboard className="size-4" />
+                Go to Dashboard
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" size="sm">
+                  Sign in
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button variant="glow" size="sm">
+                  Get Started
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -99,16 +116,27 @@ export function Navbar() {
             </Link>
           ))}
           <div className="flex gap-2 pt-2 border-t border-[var(--border)]">
-            <Link href="/login" className="flex-1">
-              <Button variant="outline" className="w-full" size="sm">
-                Sign in
-              </Button>
-            </Link>
-            <Link href="/register" className="flex-1">
-              <Button variant="glow" className="w-full" size="sm">
-                Get Started
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/dashboard" className="w-full">
+                <Button variant="glow" className="w-full gap-1.5" size="sm">
+                  <LayoutDashboard className="size-4" />
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="flex-1">
+                  <Button variant="outline" className="w-full" size="sm">
+                    Sign in
+                  </Button>
+                </Link>
+                <Link href="/register" className="flex-1">
+                  <Button variant="glow" className="w-full" size="sm">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

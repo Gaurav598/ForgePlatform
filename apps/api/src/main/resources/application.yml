@@ -9,7 +9,7 @@ spring:
   # ── MongoDB ────────────────────────────────────────────
   data:
     mongodb:
-      uri: ${MONGO_URI:mongodb://localhost:27017/forgeai}
+      uri: ${MONGO_URI:mongodb://forgeai:forgeai_dev_pass@localhost:27017/forgeai?authSource=admin}
       auto-index-creation: true
 
     # ── Redis ──────────────────────────────────────────────

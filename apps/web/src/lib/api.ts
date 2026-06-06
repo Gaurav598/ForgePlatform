@@ -197,6 +197,53 @@ class ApiClient {
     return this.request<ApiResponse<AnalysisResponse[]>>(`/resumes/${resumeId}/analyses`);
   }
 
+  /**
+   * Resume Builder save — serializes structured form data to a JSON blob and
+   * POSTs it as a multipart file to the existing /upload endpoint.
+   * The backend saves only metadata (title, fileType, filePath); it never
+   * reads file content, so this is the correct approach without modifying the API.
+   */
+  async createBuilderResume(payload: {
+    template: string;
+    personal: {
+      name: string;
+      email: string;
+      phone: string;
+      location: string;
+      linkedin: string;
+      portfolio: string;
+      summary: string;
+    };
+    experiences: Array<{
+      company: string;
+      role: string;
+      startDate: string;
+      endDate: string;
+      current: boolean;
+      bullets: string;
+    }>;
+    educations: Array<{
+      institution: string;
+      degree: string;
+      field: string;
+      year: string;
+      gpa: string;
+    }>;
+    skills: string;
+  }) {
+    const safeName = payload.personal.name.trim().replace(/\s+/g, "_") || "Resume";
+    const fileName = `${safeName}_${payload.template}_builder.json`;
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const file = new File([blob], fileName, { type: "application/json" });
+    return this.uploadResume(file);
+  }
+
+  async deleteResume(resumeId: string) {
+    return this.request<ApiResponse<void>>(`/resumes/${resumeId}`, { method: "DELETE" });
+  }
+
   // ── Generic AI ────────────────────────────────────────
   async generateAI(prompt: string, systemPrompt?: string, temperature?: number, maxTokens?: number) {
     return this.request<ApiResponse<AIGenerateResponse>>("/ai/generate", {
@@ -305,11 +352,11 @@ export interface AnalysisResponse {
   jobTitle?: string;
   companyName?: string;
   overallScore: number;
-  atsScore: ScoreSection;
-  contentScore: ScoreSection;
-  structureScore: ScoreSection;
-  skillsScore: ScoreSection;
-  toneScore: ScoreSection;
+  atsScore: ScoreSection | null;
+  contentScore: ScoreSection | null;
+  structureScore: ScoreSection | null;
+  skillsScore: ScoreSection | null;
+  toneScore: ScoreSection | null;
   missingKeywords: string[];
   recommendations: string[];
   aiProvider: string;

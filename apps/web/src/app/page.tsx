@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import {
   ArrowRight,
   Check,
   Star,
+  LayoutDashboard,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -159,6 +161,13 @@ const pricingPlans = [
 
 /* ── Page Component ────────────────────────────────────── */
 export default function LandingPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("forge_access_token");
+    setIsAuthenticated(!!token);
+  }, []);
+
   return (
     <div className="min-h-dvh">
       <Navbar />
@@ -207,18 +216,37 @@ export default function LandingPage() {
 
             {/* CTAs */}
             <motion.div variants={fadeUp} custom={3} className="mt-10 flex flex-col sm:flex-row items-center gap-4">
-              <Link href="/register">
-                <Button variant="glow" size="xl" className="gap-2.5 text-base font-semibold px-8">
-                  <Sparkles className="size-5" />
-                  Start Building — Free
-                </Button>
-              </Link>
-              <Link href="#modules">
-                <Button variant="outline" size="xl" className="gap-2 text-base">
-                  Explore Features
-                  <ArrowRight className="size-4" />
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link href="/dashboard">
+                    <Button variant="glow" size="xl" className="gap-2.5 text-base font-semibold px-8">
+                      <LayoutDashboard className="size-5" />
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                  <Link href="#modules">
+                    <Button variant="outline" size="xl" className="gap-2 text-base">
+                      Explore Features
+                      <ArrowRight className="size-4" />
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/register">
+                    <Button variant="glow" size="xl" className="gap-2.5 text-base font-semibold px-8">
+                      <Sparkles className="size-5" />
+                      Start Building — Free
+                    </Button>
+                  </Link>
+                  <Link href="#modules">
+                    <Button variant="outline" size="xl" className="gap-2 text-base">
+                      Explore Features
+                      <ArrowRight className="size-4" />
+                    </Button>
+                  </Link>
+                </>
+              )}
             </motion.div>
 
             {/* Social Proof */}
