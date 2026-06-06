@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 .pnpm-store/
+.pnp
+.pnp.*
 
 # Build
 .next/
@@ -9,10 +11,14 @@ build/
 dist/
 target/
 
+# Testing
+coverage/
+
 # Environment
 .env
 .env.local
 .env.*.local
+!.env.example
 
 # IDE
 .idea/
@@ -22,9 +28,13 @@ target/
 *.swo
 .DS_Store
 
-# Logs
+# Logs and Debug
 *.log
 logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
 # Docker
 docker-data/
@@ -36,3 +46,12 @@ docker-data/
 
 # OS
 Thumbs.db
+*.pem
+
+# Typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel & Turbo
+.vercel/
+.turbo/
