@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Sparkles, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";

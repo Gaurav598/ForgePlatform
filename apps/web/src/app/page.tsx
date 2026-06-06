@@ -165,6 +165,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("forge_access_token");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAuthenticated(!!token);
   }, []);
 

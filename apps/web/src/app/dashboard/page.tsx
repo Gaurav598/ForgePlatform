@@ -10,7 +10,6 @@ import {
   Target,
   Plus,
   ArrowUpRight,
-  TrendingUp,
   Clock,
   Sparkles,
 } from "lucide-react";

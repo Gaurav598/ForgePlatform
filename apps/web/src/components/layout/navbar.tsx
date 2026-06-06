@@ -24,6 +24,7 @@ export function Navbar() {
     
     // Check for auth token in localStorage
     const token = localStorage.getItem("forge_access_token");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAuthenticated(!!token);
 
     return () => window.removeEventListener("scroll", handleScroll);

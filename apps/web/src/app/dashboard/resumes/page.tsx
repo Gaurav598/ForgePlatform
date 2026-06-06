@@ -153,16 +153,10 @@ function ResumeCard({
   resume,
   onAnalyze,
   isAnalyzing,
-  jobTitle,
-  jobDescription,
-  companyName,
 }: {
   resume: ResumeResponse;
   onAnalyze: (id: string) => void;
   isAnalyzing: boolean;
-  jobTitle: string;
-  jobDescription: string;
-  companyName: string;
 }) {
   const [showHistory, setShowHistory] = useState(false);
 
@@ -540,9 +534,6 @@ export default function ResumesPage() {
                   resume={resume}
                   onAnalyze={handleAnalyze}
                   isAnalyzing={analyzingId === resume.id && analyzeMutation.isPending}
-                  jobTitle={jobTitle}
-                  jobDescription={jobDescription}
-                  companyName={companyName}
                 />
               ))}
             </div>

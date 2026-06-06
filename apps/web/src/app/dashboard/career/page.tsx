@@ -4,9 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Brain, TrendingUp, BookOpen, Target, GraduationCap, DollarSign,
-  Sparkles, Map, Loader2, ArrowRight, RefreshCw,
+  Sparkles, Map, Loader2, RefreshCw,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";

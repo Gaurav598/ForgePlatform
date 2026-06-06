@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  PenTool, FileText, Plus, Minus, CheckCircle2,
+  FileText, Plus, Minus, CheckCircle2,
   Sparkles, User, Briefcase, GraduationCap, Code, ArrowRight,
   ArrowLeft, Loader2, AlertCircle,
 } from "lucide-react";

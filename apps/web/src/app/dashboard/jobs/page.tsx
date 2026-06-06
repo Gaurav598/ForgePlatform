@@ -2,10 +2,9 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Target, Search, BarChart3, CheckCircle, AlertCircle, Loader2,
-  FileText, ChevronDown, Sparkles,
+  Target, Search, BarChart3, CheckCircle, Loader2,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";

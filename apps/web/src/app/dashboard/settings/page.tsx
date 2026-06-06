@@ -4,8 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  User, Mail, Shield, Bell, Palette, Loader2,
-  CheckCircle2, Lock, Globe, Trash2,
+  User, Shield, Bell, Palette, Loader2,
+  CheckCircle2, Lock, Trash2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -29,6 +29,7 @@ export default function SettingsPage() {
 
   // Sync when user loads
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user?.name) setName(user.name);
   }, [user]);
 

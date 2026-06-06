@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Mic, Brain, Video, MessageSquare, Code, Users, Briefcase,
-  ArrowRight, Loader2, Send, RefreshCw, CheckCircle2,
+  ArrowRight, Loader2, Send, RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
