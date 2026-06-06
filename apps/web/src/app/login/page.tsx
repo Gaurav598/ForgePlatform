@@ -21,7 +21,7 @@ export default function LoginPage() {
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as any }}
           >
             <Link href="/" className="flex items-center gap-2.5 mb-10">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary)] shadow-md">
@@ -48,7 +48,7 @@ export default function LoginPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as any }}
           className="w-full max-w-md"
         >
           {/* Mobile Logo */}
