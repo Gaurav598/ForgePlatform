@@ -8,8 +8,8 @@ import { useEffect, useState } from "react";
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setMounted(true); }, []);
   if (!mounted) return <Button variant="ghost" size="icon" className="rounded-full opacity-0" />;
 
   return (
