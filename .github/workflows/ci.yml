@@ -15,9 +15,6 @@ jobs:
   frontend:
     name: Frontend (Next.js)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
 
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +27,7 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          cache-dependency-path: apps/web/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
 
@@ -41,7 +38,7 @@ jobs:
         run: pnpm run type-check
 
       - name: Build
-        run: pnpm run build
+        run: pnpm run build:web
 
   # ── Backend ───────────────────────────────────────────────
   backend:
