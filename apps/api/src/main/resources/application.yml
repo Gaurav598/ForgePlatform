@@ -1,0 +1,79 @@
+# ═══════════════════════════════════════════════════════════
+# FORGE AI — Application Configuration
+# ═══════════════════════════════════════════════════════════
+
+spring:
+  application:
+    name: forge-ai-api
+
+  # ── MongoDB ────────────────────────────────────────────
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017/forgeai}
+      auto-index-creation: true
+
+    # ── Redis ──────────────────────────────────────────────
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  # ── RabbitMQ ─────────────────────────────────────────────
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+
+  # ── File Upload ──────────────────────────────────────────
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+# ── Server ──────────────────────────────────────────────────
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ── JWT ─────────────────────────────────────────────────────
+app:
+  jwt:
+    secret: ${JWT_SECRET:forge-ai-dev-secret-key-change-in-production-must-be-256-bits-long!!}
+    access-token-expiry: 900000       # 15 minutes
+    refresh-token-expiry: 604800000   # 7 days
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+
+# ── Actuator & Prometheus ────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# ── OpenAPI / Swagger ─────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api/v1/docs
+  swagger-ui:
+    path: /api/docs
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+# ── Logging ──────────────────────────────────────────────────
+logging:
+  level:
+    com.forgeai: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

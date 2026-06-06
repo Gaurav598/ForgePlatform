@@ -1,0 +1,23 @@
+{
+  "name": "forge-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FORGE AI — Enterprise AI Career & Content Platform",
+  "scripts": {
+    "dev": "pnpm --parallel -r run dev",
+    "dev:web": "pnpm --filter @forge-ai/web run dev",
+    "dev:api": "cd apps/api && mvn spring-boot:run -Dspring-boot.run.profiles=dev",
+    "build:web": "pnpm --filter @forge-ai/web run build",
+    "build:api": "cd apps/api && mvn clean package -DskipTests",
+    "lint": "pnpm --filter @forge-ai/web run lint",
+    "type-check": "pnpm --filter @forge-ai/web run type-check",
+    "docker:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
+    "docker:logs": "docker compose -f infrastructure/docker/docker-compose.yml logs -f",
+    "clean": "pnpm -r run clean"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

@@ -1,0 +1,156 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgeai-api
+  labels:
+    app: forgeai-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: forgeai-api
+  template:
+    metadata:
+      labels:
+        app: forgeai-api
+    spec:
+      containers:
+        - name: api
+          image: forgeai/api:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "production"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: forgeai-secrets
+                  key: mongo-uri
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: forgeai-secrets
+                  key: jwt-secret
+            - name: REDIS_HOST
+              value: "forgeai-redis-svc"
+            - name: RABBITMQ_HOST
+              value: "forgeai-rabbitmq-svc"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forgeai-api-svc
+spec:
+  selector:
+    app: forgeai-api
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgeai-web
+  labels:
+    app: forgeai-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: forgeai-web
+  template:
+    metadata:
+      labels:
+        app: forgeai-web
+    spec:
+      containers:
+        - name: web
+          image: forgeai/web:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: "https://api.forgeai.com/api/v1"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forgeai-web-svc
+spec:
+  selector:
+    app: forgeai-web
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: forgeai-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "30"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - forgeai.com
+        - api.forgeai.com
+      secretName: forgeai-tls
+  rules:
+    - host: forgeai.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: forgeai-web-svc
+                port:
+                  number: 3000
+    - host: api.forgeai.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: forgeai-api-svc
+                port:
+                  number: 8080
